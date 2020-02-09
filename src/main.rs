@@ -6,8 +6,9 @@ const HID_REPORT_TYPE_FEATURE: u16 = 0x03;
 
 const VENDOR_ID: u16 = 0x43e;
 const PRODUCT_ID: u16 = 0x9a40;
-const MAX_BRIGHTNESS: u16 = 0xd2f0;
-const MIN_BRIGHTNESS: u16 = 0x0000;
+const MAX_BRIGHTNESS: u16 = 54000;
+const MIN_BRIGHTNESS: u16 = 0;
+const ONE_PERCENT_CHANGE: u16 = 540;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = clap::App::new("LG Ultrafine Brightness Control")
@@ -24,14 +25,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             clap::Arg::with_name("increment")
                 .long("increment")
                 .short("i")
-                .takes_value(false)
+                .takes_value(true)
                 .help("Increment brightness"),
         )
         .arg(
             clap::Arg::with_name("decrement")
                 .long("decrement")
                 .short("d")
-                .takes_value(false)
+                .takes_value(true)
                 .help("Decrement brightness"),
         )
         .get_matches();
@@ -54,17 +55,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let val = (MAX_BRIGHTNESS as f32 * (set_to as f32 / 100.0)) as u16;
                     set_brightness(&mut handle, val)?;
                 }
-            }
-
-            if matches.is_present("increment") {
-                let new_val = std::cmp::min(MAX_BRIGHTNESS, current + 2700);
+            } else if let Some(inc) = matches.value_of("increment") {
+                let inc = inc.parse::<u8>()?;
+                let new_val = std::cmp::min(
+                    MAX_BRIGHTNESS,
+                    current + ((inc as u16) * ONE_PERCENT_CHANGE),
+                );
+                println!(
+                    "increment: {} {} => {}",
+                    inc,
+                    inc as u16 * ONE_PERCENT_CHANGE,
+                    new_val
+                );
+                set_brightness(&mut handle, new_val)?;
+            } else if let Some(dec) = matches.value_of("decrement") {
+                println!("decrement");
+                let dec = dec.parse::<u8>()?;
+                let new_val =
+                    std::cmp::max(MIN_BRIGHTNESS, current - (dec as u16 * ONE_PERCENT_CHANGE));
                 set_brightness(&mut handle, new_val)?;
             }
 
-            if matches.is_present("decrement") {
-                let new_val = std::cmp::max(MIN_BRIGHTNESS, current - 2700);
-                set_brightness(&mut handle, new_val)?;
-            }
+            handle.release_interface(1).ok();
+            handle.attach_kernel_driver(1).ok();
         }
     }
 
