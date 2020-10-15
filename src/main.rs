@@ -6,9 +6,9 @@ const HID_REPORT_TYPE_FEATURE: u16 = 0x03;
 
 const VENDOR_ID: u16 = 0x43e;
 const PRODUCT_ID: u16 = 0x9a40;
-const MAX_BRIGHTNESS: u16 = 54000;
-const MIN_BRIGHTNESS: u16 = 0;
-const ONE_PERCENT_CHANGE: u16 = 540;
+const MAX_BRIGHTNESS: u16 = 0xd2f0;
+const MIN_BRIGHTNESS: u16 = 0xd2f0 / 100; // zero turns off backlighting and is annoying to fix
+const ONE_PERCENT_CHANGE: u16 = 0xd2f0 / 100;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = clap::App::new("LG Ultrafine Brightness Control")
